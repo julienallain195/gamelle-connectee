@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "Gamelle Connectée",
+    "slug": "gamelle-connectee",
+    "version": "1.0.0",
+    "android": {
+      "package": "com.gamelleconnectee.app"
+    },
+    "plugins": ["expo-notifications"]
+  }
+}

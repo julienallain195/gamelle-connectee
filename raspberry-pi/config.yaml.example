@@ -1,0 +1,21 @@
+# ============================================
+#  CONFIGURATION DU RASPBERRY PI
+# ============================================
+
+firebase:
+  credentials_file: "service-account.json"  # Clé privée Firebase (téléchargée depuis la console)
+  project_id: "TON_PROJECT_ID"              # ex: gamelle-connectee-xxxxx
+  storage_bucket: "TON_PROJECT_ID.appspot.com"
+
+camera:
+  width: 1280
+  height: 720
+  check_interval_seconds: 60    # Vérification toutes les 60 secondes
+  empty_threshold: 35           # Score en dessous duquel la gamelle est "vide"
+
+notifications:
+  expo_push_token: "ExponentPushToken[xxxx]"  # Token de ton téléphone (récupéré dans l'app)
+  alert_cooldown_minutes: 30    # Anti-spam : max 1 alerte toutes les 30 min
+
+device:
+  id: "raspberry-pi-1"          # Nom unique de ce Raspberry dans Firebase

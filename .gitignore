@@ -1,0 +1,8 @@
+node_modules/
+venv/
+__pycache__/
+.expo/
+mobile-app/.env
+raspberry-pi/config.yaml
+raspberry-pi/service-account.json
+.DS_Store

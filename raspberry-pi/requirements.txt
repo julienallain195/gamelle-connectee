@@ -1,0 +1,8 @@
+# Librairies Python pour le Raspberry Pi
+firebase-admin>=6.5.0      # Connexion à Firebase (base de données + stockage)
+picamera2>=0.3.19          # Contrôle de la caméra officielle Raspberry Pi
+opencv-python-headless>=4.10.0  # Traitement d'image (détection gamelle vide)
+numpy>=1.26.0              # Calculs mathématiques sur les images
+requests>=2.31.0           # Envoi des notifications push (API Expo)
+PyYAML>=6.0.1              # Lecture du fichier config.yaml
+schedule>=1.2.0            # Boucle planifiée (vérification toutes les 60s)

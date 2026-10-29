@@ -1,0 +1,9 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /photos/{deviceId}/{fileName} {
+      allow read: if true;    // L'app lit les photos
+      allow write: if false;  // Seul le Pi upload (compte de service)
+    }
+  }
+}
