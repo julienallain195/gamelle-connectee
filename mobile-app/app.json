@@ -6,6 +6,9 @@
     "android": {
       "package": "com.gamelleconnectee.app"
     },
-    "plugins": ["expo-notifications"]
+    "plugins": [
+      "expo-notifications",
+      "expo-video"
+    ]
   }
 }

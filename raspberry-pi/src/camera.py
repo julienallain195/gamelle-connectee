@@ -8,6 +8,8 @@ import io
 import time
 import numpy as np
 from picamera2 import Picamera2
+from picamera2.encoders import H264Encoder, Quality
+from picamera2.outputs import FileOutput
 
 class Camera:
     def __init__(self, width=1280, height=720):
@@ -26,6 +28,15 @@ class Camera:
         """Capture une image → retourne des octets JPEG (pour l'upload)"""
         stream = io.BytesIO()
         self.picam.capture_file(stream, format="jpeg")
+        return stream.getvalue()
+
+    def record_clip(self, seconds=6):
+        """Enregistre un clip vidéo H.264 → retourne les octets bruts"""
+        stream = io.BytesIO()
+        encoder = H264Encoder()
+        self.picam.start_encoder(encoder, FileOutput(stream), quality=Quality.MEDIUM)
+        time.sleep(seconds)
+        self.picam.stop_encoder()
         return stream.getvalue()
 
     def close(self):

@@ -5,9 +5,14 @@ import { db } from './firebase';
 
 export async function registerPushToken() {
   if (!Device.isDevice) return;
-  const { status } = await Notifications.requestPermissionsAsync();
-  if (status !== 'granted') return;
-  const token = (await Notifications.getExpoPushTokenAsync()).data;
-  await setDoc(doc(db, 'devices', 'raspberry-pi-1'), { pushToken: token });
-  console.log('Token:', token);
+  try {
+    const { status } = await Notifications.requestPermissionsAsync();
+    if (status !== 'granted') return;
+    const token = (await Notifications.getExpoPushTokenAsync()).data;
+    await setDoc(doc(db, 'devices', 'raspberry-pi-1'), { pushToken: token });
+    console.log('Token:', token);
+  } catch (err) {
+    // Expo Go ne supporte pas les push distants depuis SDK 53 : ignorer
+    console.warn('Push indisponible sur cet environnement:', err.message);
+  }
 }

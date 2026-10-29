@@ -13,6 +13,13 @@ camera:
   check_interval_seconds: 60    # Vérification toutes les 60 secondes
   empty_threshold: 35           # Score en dessous duquel la gamelle est "vide"
 
+detection:
+  cat_model: "models/detect.tflite"  # Modèle TFLite détection chat (voir README)
+  cat_confidence: 0.5                 # Seuil de confiance (0.5 = raisonnable)
+
+video:
+  clip_seconds: 6            # Durée de la vidéo enregistrée quand le chat est détecté
+
 notifications:
   expo_push_token: "ExponentPushToken[xxxx]"  # Token de ton téléphone (récupéré dans l'app)
   alert_cooldown_minutes: 30    # Anti-spam : max 1 alerte toutes les 30 min

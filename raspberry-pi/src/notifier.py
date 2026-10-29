@@ -16,6 +16,10 @@ class PushNotifier:
         self.cooldown_seconds = cooldown_minutes * 60
         self._last_alert_at = 0.0
 
+    def update_cooldown(self, cooldown_minutes):
+        """Modifie l'anti-spam (réglage à distance depuis l'app)"""
+        self.cooldown_seconds = cooldown_minutes * 60
+
     def _can_send(self):
         """Vérifie si le cooldown est passé"""
         return (time.time() - self._last_alert_at) >= self.cooldown_seconds

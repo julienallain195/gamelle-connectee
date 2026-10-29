@@ -5,4 +5,4 @@ opencv-python-headless>=4.10.0  # Traitement d'image (détection gamelle vide)
 numpy>=1.26.0              # Calculs mathématiques sur les images
 requests>=2.31.0           # Envoi des notifications push (API Expo)
 PyYAML>=6.0.1              # Lecture du fichier config.yaml
-schedule>=1.2.0            # Boucle planifiée (vérification toutes les 60s)
+tflite-runtime>=2.14.0     # Détection de chat (modèle TFLite)

@@ -1,9 +1,12 @@
 import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
 import HomeScreen from './src/screens/HomeScreen';
-import GalleryScreen from './src/screens/GalleryScreen';
+import PhotosScreen from './src/screens/PhotosScreen';
+import CatScreen from './src/screens/CatScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
 import { registerPushToken } from './src/services/notifications';
 
 Notifications.setNotificationHandler({
@@ -13,7 +16,14 @@ Notifications.setNotificationHandler({
   }),
 });
 
-const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
+
+const TAB_ICONS = {
+  Gamelle: { on: 'restaurant', off: 'restaurant-outline' },
+  Photos: { on: 'images', off: 'images-outline' },
+  Chat: { on: 'paw', off: 'paw-outline' },
+  'Paramètres': { on: 'settings', off: 'settings-outline' },
+};
 
 export default function App() {
   useEffect(() => {
@@ -22,10 +32,23 @@ export default function App() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator>
-        <Stack.Screen name="Home" component={HomeScreen} options={{ title: '🐱 Gamelle' }} />
-        <Stack.Screen name="Gallery" component={GalleryScreen} options={{ title: '📸 Photos' }} />
-      </Stack.Navigator>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons
+              name={focused ? TAB_ICONS[route.name].on : TAB_ICONS[route.name].off}
+              size={size}
+              color={color}
+            />
+          ),
+          tabBarActiveTintColor: '#e67e22',
+        })}
+      >
+        <Tab.Screen name="Gamelle" component={HomeScreen} options={{ title: '🐱 Gamelle' }} />
+        <Tab.Screen name="Photos" component={PhotosScreen} options={{ title: '📸 Photos' }} />
+        <Tab.Screen name="Chat" component={CatScreen} options={{ title: '🐾 Chat' }} />
+        <Tab.Screen name="Paramètres" component={SettingsScreen} options={{ title: '⚙️ Paramètres' }} />
+      </Tab.Navigator>
     </NavigationContainer>
   );
 }

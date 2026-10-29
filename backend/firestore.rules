@@ -4,7 +4,34 @@ service cloud.firestore {
     // Événements envoyés par le Raspberry
     match /events/{eventId} {
       allow read: if true;    // L'app mobile lit tout
-      allow write: if false;  // Seul le Pi écrit (via compte de service)
+      allow write: if false;  // Seul le Pi écrit (via compte de service, qui ignore les règles)
+    }
+    // Commandes envoyées par l'app mobile au Raspberry
+    // (ex: "prends une photo maintenant"). Le Pi les lit et les marque "done".
+    match /commands/{commandId} {
+      allow read: if true;                                       // L'app suit le statut de sa commande
+      allow create: if request.resource.data.type == 'capture';  // Elle ne peut demander que des captures
+      allow update, delete: if false;                            // Seul le Pi change le statut
+    }
+    // Réglages modifiables depuis l'app, lus par le Pi
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if true;  // projet perso : l'app (et le Pi) peuvent écrire
+    }
+    // État du Raspberry (température, uptime, dernier relevé) — écrit par le Pi
+    match /status/{deviceId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    // Passages du chat détectés par le Pi (un doc par détection)
+    match /catSightings/{sightingId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    // Stats agrégées par jour (remplissage moyen, passages) — écrites par le Pi
+    match /dailyStats/{date} {
+      allow read: if true;
+      allow write: if false;
     }
     // Tokens push des téléphones
     match /devices/{deviceId} {
