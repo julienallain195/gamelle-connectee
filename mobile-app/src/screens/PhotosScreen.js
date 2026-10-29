@@ -58,6 +58,11 @@ function PhotoCell({ item }) {
           <Ionicons name="play" size={14} color="#fff" />
         </View>
       )}
+      {item.occluded && (
+        <View style={styles.occludedBadge}>
+          <Text style={styles.badgeText}>🚧</Text>
+        </View>
+      )}
     </TouchableOpacity>
   );
 }
@@ -78,6 +83,7 @@ export default function PhotosScreen() {
         const item = {
           id: d.id,
           catSeen: data.catSeen === true,
+          occluded: data.occluded === true,
           timestamp: data.timestamp,
           videoUrl: null,
           url: null,
@@ -244,6 +250,11 @@ const styles = StyleSheet.create({
     position: 'absolute', top: 6, right: 6,
     backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 12,
     padding: 4,
+  },
+  occludedBadge: {
+    position: 'absolute', top: 6, left: 6,
+    backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 10,
+    paddingHorizontal: 6, paddingVertical: 2,
   },
   closeVideo: {
     position: 'absolute', top: 6, right: 6,

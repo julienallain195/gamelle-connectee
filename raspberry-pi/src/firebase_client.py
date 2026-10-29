@@ -35,8 +35,9 @@ class FirebaseClient:
         return filename
 
     def record_event(self, device_id, bowl_empty, score, photo_path,
-                     cat_seen=False, on_demand=False, video_path=None):
-        """Écrit un événement dans la collection 'events' de Firestore"""
+                     cat_seen=False, on_demand=False, video_path=None, occluded=False):
+        """Écrit un événement dans la collection 'events' de Firestore.
+        bowl_empty/score peuvent être None si la vue était masquée."""
         self.db.collection("events").add({
             "deviceId": device_id,
             "bowlEmpty": bowl_empty,
@@ -45,6 +46,7 @@ class FirebaseClient:
             "videoPath": video_path,
             "catSeen": cat_seen,
             "onDemand": on_demand,
+            "occluded": occluded,
             "timestamp": firestore.SERVER_TIMESTAMP,
         })
 

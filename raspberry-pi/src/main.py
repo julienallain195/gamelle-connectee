@@ -4,9 +4,10 @@
 # Ce script tourne en boucle sur le Raspberry :
 # 1. Prend une photo (cycle régulier, ou à la demande depuis l'app mobile)
 # 2. Analyse si la gamelle est vide + si le chat est visible
-# 3. Enregistre une courte vidéo si le chat est là
-# 4. Envoie photo/vidéo + événements à Firebase
-# 5. Notifie si la gamelle est vide
+# 3. Invalide les relevés si la vue de la gamelle est masquée (chat/humain)
+# 4. Enregistre une courte vidéo si le chat est là
+# 5. Envoie photo/vidéo + événements à Firebase
+# 6. Notifie si la gamelle est vide (après confirmation par 2 relevés)
 #
 # Les réglages (seuil, intervalle, heures silencieuses, vidéo) peuvent être
 # modifiés à distance depuis l'app mobile (document Firestore settings/gamelle).
@@ -21,9 +22,13 @@ import time
 import yaml
 
 from camera import Camera
-from detector import BowlDetector, CatDetector
+from detector import BowlDetector, CocoDetector
 from firebase_client import FirebaseClient
 from notifier import PushNotifier
+
+# Nombre d'essais pour obtenir une vue dégagée de la gamelle à chaque relevé
+OCCLUSION_RETRIES = 3
+OCCLUSION_RETRY_DELAY = 10  # secondes entre les essais
 
 def load_config(path="config.yaml"):
     """Lit le fichier de configuration config.yaml"""
@@ -65,6 +70,19 @@ def h264_to_mp4(h264_bytes):
         with open(mp4_path, "rb") as f:
             return f.read()
 
+def occlusion_name(detections, roi, min_overlap=0.25):
+    """Retourne ('chat'|'personne', score) si un objet recouvre la zone gamelle,
+    sinon None. min_overlap = fraction de la zone gamelle recouverte."""
+    rx, ry, rw, rh = roi
+    for cls, score, box in detections:
+        ymin, xmin, ymax, xmax = box
+        # Intersection boîte/zone gamelle (coordonnées relatives 0.0-1.0)
+        ix = max(0.0, min(rx + rw, xmax) - max(rx, xmin))
+        iy = max(0.0, min(ry + rh, ymax) - max(ry, ymin))
+        if ix * iy >= min_overlap * rw * rh:
+            return ("chat" if cls == CocoDetector.CAT_CLASS_ID else "personne", round(score, 2))
+    return None
+
 def main():
     config = load_config()
 
@@ -82,19 +100,21 @@ def main():
     )
     device_id = config["device"]["id"]
     clip_seconds = config.get("video", {}).get("clip_seconds", 6)
+    # Nombre de relevés "vide" consécutifs avant d'alerter
+    confirm_empty_checks = int(config.get("notifications", {}).get("confirm_empty_checks", 2))
 
-    # Détection de chat : optionnelle, si le modèle TFLite est présent
+    # Détection chat/humain : optionnelle, si le modèle TFLite est présent
     detection_conf = config.get("detection", {})
-    cat_detector = None
+    coco = None
     model_path = detection_conf.get("cat_model", "models/detect.tflite")
     if model_path and os.path.exists(model_path):
-        cat_detector = CatDetector(
+        coco = CocoDetector(
             model_path=model_path,
             confidence=detection_conf.get("cat_confidence", 0.5),
         )
-        print("🐱 Détection de chat activée")
+        print("🐱 Détection chat/humain activée")
     else:
-        print("⚠️  Modèle TFLite absent (models/detect.tflite) : détection de chat désactivée")
+        print("⚠️  Modèle TFLite absent (models/detect.tflite) : détection désactivée")
 
     # Réglages actifs : valeurs de config.yaml, écrasées à distance via l'app
     state = {
@@ -104,6 +124,7 @@ def main():
         "quiet_start": 23,
         "quiet_end": 7,
         "video_on_cat": True,
+        "empty_streak": 0,  # relevés "vide" consécutifs (anti-fausse-alerte)
     }
 
     def apply_remote_settings(data):
@@ -155,13 +176,37 @@ def main():
                     skipped_quiet = True
                     print("🌙 Heures silencieuses : capture ignorée")
                 else:
-                    # 1. Prendre une photo
-                    image = camera.capture_array()
+                    # 1. Photo, avec nouveaux essais si la vue est masquée
+                    image = None
+                    occluded_by = None
+                    for attempt in range(OCCLUSION_RETRIES):
+                        image = camera.capture_array()
+                        if not coco:
+                            break  # pas de détecteur : on ne peut pas vérifier la vue
+                        occluded_by = occlusion_name(coco.detect(image), detector.roi)
+                        if not occluded_by:
+                            break
+                        print(f"🚧 Vue masquée par {occluded_by[0]} ({occluded_by[1]}) — nouvel essai {attempt + 1}/{OCCLUSION_RETRIES}")
+                        time.sleep(OCCLUSION_RETRY_DELAY)
+
+                    if occluded_by:
+                        if on_demand:
+                            # À la demande, la photo est utile même masquée :
+                            # on la publie mais sans mesurer l'état de la gamelle.
+                            print("🚧 Vue toujours masquée : photo publiée, état non mesuré")
+                            photo_path = firebase.upload_photo(camera.capture_bytes(), device_id)
+                            firebase.record_event(device_id, None, None, photo_path,
+                                                  occluded=True, on_demand=True)
+                        else:
+                            # Relevé planifié masqué : aucune donnée enregistrée
+                            print("🚧 Vue masquée : relevé ignoré")
+                        return
+
                     # 2. Analyser : gamelle vide ? chat visible ?
                     bowl_empty, score = detector.is_empty(image)
                     cat_seen, cat_confidence = (False, 0.0)
-                    if cat_detector:
-                        cat_seen, cat_confidence = cat_detector.seen(image)
+                    if coco:
+                        cat_seen, cat_confidence = coco.seen(image)
                     print(f"Score: {score} → {'VIDE' if bowl_empty else 'pleine'}"
                           f" | chat: {'oui' if cat_seen else 'non'} ({cat_confidence})")
                     # 3. Vidéo courte si le chat est là (optionnel)
@@ -178,9 +223,13 @@ def main():
                     if cat_seen:
                         firebase.record_sighting(device_id, cat_confidence)
                     firebase.update_daily_stats(bowl_empty, cat_seen)
-                    # 5. Notification push si vide (avec anti-spam)
+                    # 5. Notification si vide, après confirmation par 2 relevés
                     if bowl_empty:
-                        notifier.notify_bowl_empty()
+                        state["empty_streak"] += 1
+                        if state["empty_streak"] >= confirm_empty_checks:
+                            notifier.notify_bowl_empty()
+                    else:
+                        state["empty_streak"] = 0
             except Exception as err:
                 print(f"Erreur: {err}")  # On ne crash jamais la boucle
             finally:

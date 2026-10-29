@@ -23,6 +23,7 @@ video:
 notifications:
   expo_push_token: "ExponentPushToken[xxxx]"  # Token de ton téléphone (récupéré dans l'app)
   alert_cooldown_minutes: 30    # Anti-spam : max 1 alerte toutes les 30 min
+  confirm_empty_checks: 2      # Alertes seulement après 2 relevés "vide" consécutifs
 
 device:
   id: "raspberry-pi-1"          # Nom unique de ce Raspberry dans Firebase

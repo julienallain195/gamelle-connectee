@@ -19,7 +19,8 @@ export default function HomeScreen() {
     const q = query(collection(db, 'events'), orderBy('timestamp', 'desc'), limit(20));
     const unsub = onSnapshot(q, (snap) => {
       const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setEvents(docs);
+      // Les relevés "vue masquée" n'ont pas d'état exploitable
+      setEvents(docs.filter(e => !e.occluded));
       // Vignette : photo du dernier relevé qui en a une
       const withPhoto = docs.find(e => e.photoPath);
       if (withPhoto?.photoPath) {

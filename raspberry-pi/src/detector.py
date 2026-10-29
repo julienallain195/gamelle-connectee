@@ -46,10 +46,13 @@ class BowlDetector:
         return score < self.empty_threshold, score
 
 
-class CatDetector:
-    """Détecte la présence d'un chat via un modèle TFLite SSD MobileNet COCO."""
+class CocoDetector:
+    """Détecte les chats et les humains via un modèle TFLite SSD MobileNet COCO.
+    Sert à la détection du chat ET à l'invalidation des relevés quand la vue
+    de la gamelle est masquée par un passage."""
 
-    CAT_CLASS_ID = 16  # identifiant de la classe "cat" dans le jeu COCO
+    CAT_CLASS_ID = 16     # classe "cat" dans le jeu COCO
+    PERSON_CLASS_ID = 1    # classe "person" dans le jeu COCO
 
     def __init__(self, model_path, confidence=0.5):
         self.confidence = confidence
@@ -61,8 +64,9 @@ class CatDetector:
         self.input_height = int(self.input_details[0]["shape"][1])
         self.input_width = int(self.input_details[0]["shape"][2])
 
-    def seen(self, image_bgr):
-        """Retourne (chat_vu: bool, confiance: float)"""
+    def detect(self, image_bgr):
+        """Retourne [(class_id, score, box), ...] pour les objets détectés.
+        box = (ymin, xmin, ymax, xmax) en coordonnées relatives (0.0 → 1.0)."""
         rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
         resized = cv2.resize(rgb, (self.input_width, self.input_height))
         input_data = np.expand_dims(resized, axis=0).astype(np.float32)
@@ -75,8 +79,17 @@ class CatDetector:
         classes = self.interpreter.get_tensor(self.output_details[1]["index"])[0]
         scores = self.interpreter.get_tensor(self.output_details[2]["index"])[0]
 
+        detections = []
+        for box, cls, score in zip(boxes, classes, scores):
+            if float(score) >= self.confidence:
+                ymin, xmin, ymax, xmax = [float(v) for v in box]
+                detections.append((int(cls), float(score), (ymin, xmin, ymax, xmax)))
+        return detections
+
+    def seen(self, image_bgr):
+        """Retourne (chat_vu: bool, confiance: float)"""
         best = 0.0
-        for cls, score in zip(classes, scores):
-            if int(cls) == self.CAT_CLASS_ID:
-                best = max(best, float(score))
+        for cls, score, _ in self.detect(image_bgr):
+            if cls == self.CAT_CLASS_ID:
+                best = max(best, score)
         return best >= self.confidence, round(best, 3)
