@@ -51,19 +51,20 @@ def read_uptime():
     except OSError:
         return None
 
-def h264_to_mp4(h264_bytes):
-    """Convertit un flux H.264 brut en .mp4 avec ffmpeg (lecture mobile).
+def clip_to_mp4(clip_bytes):
+    """Convertit un clip MJPEG/.avi (webcam USB) en .mp4 H.264 lisible sur mobile.
     Retourne None si ffmpeg n'est pas installé."""
     if shutil.which("ffmpeg") is None:
         print("⚠️  ffmpeg absent : vidéo ignorée (sudo apt install ffmpeg)")
         return None
     with tempfile.TemporaryDirectory() as tmp:
-        raw_path = os.path.join(tmp, "clip.h264")
+        avi_path = os.path.join(tmp, "clip.avi")
         mp4_path = os.path.join(tmp, "clip.mp4")
-        with open(raw_path, "wb") as f:
-            f.write(h264_bytes)
+        with open(avi_path, "wb") as f:
+            f.write(clip_bytes)
         result = subprocess.run(
-            ["ffmpeg", "-y", "-loglevel", "error", "-i", raw_path, "-c", "copy", mp4_path]
+            ["ffmpeg", "-y", "-loglevel", "error", "-i", avi_path,
+             "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", mp4_path]
         )
         if result.returncode != 0:
             return None
@@ -212,7 +213,7 @@ def main():
                     # 3. Vidéo courte si le chat est là (optionnel)
                     video_path = None
                     if cat_seen and state["video_on_cat"]:
-                        clip = h264_to_mp4(camera.record_clip(clip_seconds))
+                        clip = clip_to_mp4(camera.record_clip(clip_seconds))
                         if clip:
                             video_path = firebase.upload_video(clip, device_id)
                     # 4. Upload photo + événement + passage + stats du jour
