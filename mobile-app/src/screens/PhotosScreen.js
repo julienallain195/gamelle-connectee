@@ -17,28 +17,33 @@ function Chip({ label, active, onPress }) {
   );
 }
 
-// Une cellule de la grille : photo, ou vidéo (lue au tap)
-function PhotoCell({ item }) {
-  const [playing, setPlaying] = useState(false);
-  const player = useVideoPlayer(item.videoUrl || '', p => {
+// Lecture d'une vidéo (créé seulement quand un clip existe, jamais avec une source vide)
+function VideoCell({ videoUrl, onClose }) {
+  const player = useVideoPlayer(videoUrl, p => {
     p.loop = true;
     p.muted = true;
   });
+  return (
+    <View style={[styles.cell, styles.videoCell]}>
+      <VideoView
+        player={player}
+        style={styles.video}
+        contentFit="cover"
+        allowsFullscreen={false}
+      />
+      <TouchableOpacity style={styles.closeVideo} onPress={onClose}>
+        <Ionicons name="close" size={16} color="#fff" />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+// Une cellule de la grille : photo, ou vidéo (lue au tap)
+function PhotoCell({ item }) {
+  const [playing, setPlaying] = useState(false);
 
   if (playing && item.videoUrl) {
-    return (
-      <View style={[styles.cell, styles.videoCell]}>
-        <VideoView
-          player={player}
-          style={styles.video}
-          contentFit="cover"
-          allowsFullscreen={false}
-        />
-        <TouchableOpacity style={styles.closeVideo} onPress={() => setPlaying(false)}>
-          <Ionicons name="close" size={16} color="#fff" />
-        </TouchableOpacity>
-      </View>
-    );
+    return <VideoCell videoUrl={item.videoUrl} onClose={() => setPlaying(false)} />;
   }
 
   return (
