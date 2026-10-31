@@ -1,0 +1,26 @@
+# ⚙️ Service systemd : démarrage automatique de la surveillance
+# Installation :
+#   cp gamelle.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now gamelle
+# Commandes utiles :
+#   systemctl status gamelle        → état du service
+#   journalctl -u gamelle -f        → logs en direct
+#   sudo systemctl restart gamelle  → redémarrage après modif de config
+
+[Unit]
+Description=Gamelle connectee - surveillance de la gamelle du chat
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Adapter pi par ton nom d'utilisateur si différent
+User=pi
+WorkingDirectory=/home/pi/gamelle-connectee/raspberry-pi
+ExecStart=/home/pi/gamelle-connectee/raspberry-pi/venv/bin/python src/main.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
