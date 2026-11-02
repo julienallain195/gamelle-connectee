@@ -140,11 +140,15 @@ export default function SettingsScreen() {
               onChange={v => setSettings({ ...settings, emptyThreshold: v })}
             />
             <NumberField
-              label="Intervalle de vérification"
+              label="Intervalle de mesure (réactivité)"
               suffix="s"
               value={settings.checkIntervalSeconds}
               onChange={v => setSettings({ ...settings, checkIntervalSeconds: Math.max(10, v) })}
             />
+            <Text style={styles.hint}>
+              Les photos ne partent QUE sur changement d'état, passage du chat ou
+              demande : cet intervalle règle la fréquence d'analyse, pas d'envoi.
+            </Text>
             <NumberField
               label="Anti-spam notification"
               suffix="min"
