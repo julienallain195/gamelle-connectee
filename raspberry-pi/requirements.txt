@@ -4,4 +4,4 @@ opencv-python-headless>=4.10.0  # Traitement d'image + capture webcam USB (V4L2)
 numpy>=1.26.0              # Calculs mathématiques sur les images
 requests>=2.31.0           # Envoi des notifications push (API Expo)
 PyYAML>=6.0.1              # Lecture du fichier config.yaml
-tflite-runtime>=2.14.0     # Détection de chat (modèle TFLite)
+ai-edge-litert>=1.0.0      # Détection de chat (successeur de tflite-runtime, compatible Python 3.13 du Pi)

@@ -14,8 +14,12 @@ import numpy as np
 try:
     from tflite_runtime.interpreter import Interpreter
 except ImportError:
-    # Fallback si tflite-runtime n'est pas installé mais que TensorFlow l'est
-    from tensorflow.lite.python.interpreter import Interpreter
+    try:
+        # Successeur officiel de tflite-runtime (paquets récents de Python)
+        from ai_edge_litert.interpreter import Interpreter
+    except ImportError:
+        # Dernier recours : TensorFlow complet
+        from tensorflow.lite.python.interpreter import Interpreter
 
 
 class BowlDetector:
