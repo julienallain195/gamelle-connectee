@@ -21,13 +21,15 @@ camera:
   # Pièce sombre : éclaircissement logiciel des images (CLAHE) — sans matériel.
   # ⚠️ Change les scores → recalibrer (calibrate.py + seuil) après activation.
   night_boost: true
-  # Réglages webcam (les valeurs non supportées par le modèle sont ignorées) :
+  # Réglages webcam. Plages de la Logitech C270 (min/max/défaut) :
+  #   brightness 0-255 (défaut 128) · contrast 0-255 (défaut 32)
+  #   saturation 0-255 (défaut 32) · gain 0-255 (défaut 0 = auto)
+  # Vérifier les plages réelles avec : v4l2-ctl -d /dev/video0 -l
   settings:
-    brightness: 70          # plus lumineux que le défaut (~30 sur la C270)
-    contrast: 130           # un peu plus de pêche
-    gain: 150               # plus de sensibilité lumineuse (mais plus de grain)
-    # exposure_auto: 1       # décommenter pour exposer en MANUEL
-    # exposure_absolute: 250 # durée d'exposition (mode manuel seulement)
+    brightness: 150          # au-dessus du défaut 128 = plus lumineux
+    contrast: 32            # défaut (NE PAS augmenter : écrase les noirs)
+    saturation: 32          # défaut
+    gain: 0                 # 0 = géré par l'auto-exposition
 
 detection:
   cat_model: "models/detect.tflite"  # Modèle TFLite détection chat (voir README)
