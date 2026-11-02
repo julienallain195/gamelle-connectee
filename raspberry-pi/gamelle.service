@@ -17,7 +17,7 @@ Wants=network-online.target
 Type=simple
 User=tampis
 WorkingDirectory=/home/tampis/gamelle-connectee/raspberry-pi
-ExecStart=/home/tampis/gamelle-connectee/raspberry-pi/venv/bin/python src/main.py
+ExecStart=/home/tampis/gamelle-connectee/raspberry-pi/venv/bin/python -u src/main.py
 Restart=always
 RestartSec=10
 
