@@ -10,12 +10,18 @@ firebase:
 camera:
   width: 1280
   height: 720
-  check_interval_seconds: 60    # Vérification toutes les 60 secondes
+  check_interval_seconds: 60    # Mesure toutes les 60 secondes (les photos ne sont
+                                # envoyées QUE si la gamelle change d'état ou si le chat passe)
   empty_threshold: 35           # Score en dessous duquel la gamelle est "vide"
+  # Zone de la gamelle dans l'image : x, y, largeur, hauteur (fractions 0 → 1).
+  # À calibrer : lance `python calibrate.py` et ajuste jusqu'à ce que le cadre
+  # vert englobe exactement l'intérieur de la gamelle.
+  roi: [0.25, 0.35, 0.5, 0.4]
 
 detection:
   cat_model: "models/detect.tflite"  # Modèle TFLite détection chat (voir README)
   cat_confidence: 0.5                 # Seuil de confiance (0.5 = raisonnable)
+  cat_cooldown_minutes: 10            # Anti-spam : 1 photo/vidéo max toutes les 10 min si le chat reste devant
 
 video:
   clip_seconds: 6            # Durée de la vidéo enregistrée quand le chat est détecté

@@ -92,7 +92,10 @@ def main():
 
     # Initialisation des composants
     camera = Camera(width=config["camera"]["width"], height=config["camera"]["height"])
-    detector = BowlDetector(empty_threshold=config["camera"]["empty_threshold"])
+    detector = BowlDetector(
+        empty_threshold=config["camera"]["empty_threshold"],
+        roi=tuple(config["camera"].get("roi", (0.25, 0.35, 0.5, 0.4))),
+    )
     firebase = FirebaseClient(
         credentials_file=config["firebase"]["credentials_file"],
         project_id=config["firebase"]["project_id"],
@@ -106,6 +109,8 @@ def main():
     clip_seconds = config.get("video", {}).get("clip_seconds", 6)
     # Nombre de relevés "vide" consécutifs avant d'alerter
     confirm_empty_checks = int(config.get("notifications", {}).get("confirm_empty_checks", 2))
+    # Anti-spam chat : délai minimum entre deux photos/vidéos du chat
+    cat_cooldown_seconds = int(config.get("detection", {}).get("cat_cooldown_minutes", 10)) * 60
 
     # Détection chat/humain : optionnelle, si le modèle TFLite est présent
     detection_conf = config.get("detection", {})
@@ -128,7 +133,9 @@ def main():
         "quiet_start": 23,
         "quiet_end": 7,
         "video_on_cat": True,
-        "empty_streak": 0,  # relevés "vide" consécutifs (anti-fausse-alerte)
+        "empty_streak": 0,       # relevés "vide" consécutifs (anti-fausse-alerte)
+        "last_bowl_empty": None,  # dernier état publié (pour détecter les changements)
+        "last_cat_pub_at": 0.0,   # heure du dernier passage de chat publié
     }
 
     def apply_remote_settings(data):
@@ -213,21 +220,35 @@ def main():
                         cat_seen, cat_confidence = coco.seen(image)
                     print(f"Score: {score} → {'VIDE' if bowl_empty else 'pleine'}"
                           f" | chat: {'oui' if cat_seen else 'non'} ({cat_confidence})")
-                    # 3. Vidéo courte si le chat est là (optionnel)
-                    video_path = None
-                    if cat_seen and state["video_on_cat"]:
-                        clip = clip_to_mp4(camera.record_clip(clip_seconds))
-                        if clip:
-                            video_path = firebase.upload_video(clip, device_id)
-                    # 4. Upload photo + événement + passage + stats du jour
-                    photo_path = firebase.upload_photo(camera.capture_bytes(), device_id)
-                    firebase.record_event(device_id, bowl_empty, score, photo_path,
-                                          cat_seen=cat_seen, on_demand=on_demand,
-                                          video_path=video_path)
-                    if cat_seen:
-                        firebase.record_sighting(device_id, cat_confidence)
+                    # 3. Publier une photo/vidéo SEULEMENT si c'est utile :
+                    #    - premier relevé ou changement d'état de la gamelle
+                    #    - passage du chat (avec anti-spam : 1 publication max
+                    #      toutes les X minutes même s'il reste devant)
+                    #    - demande explicite depuis l'app
+                    # Sinon (gamelle inchangée, pas de chat) : rien n'est envoyé.
+                    first_reading = state["last_bowl_empty"] is None
+                    state_changed = (not first_reading) and (bowl_empty != state["last_bowl_empty"])
+                    cat_to_publish = cat_seen and (time.monotonic() - state["last_cat_pub_at"]) >= cat_cooldown_seconds
+                    if on_demand or first_reading or state_changed or cat_to_publish:
+                        video_path = None
+                        if cat_seen and state["video_on_cat"]:
+                            clip = clip_to_mp4(camera.record_clip(clip_seconds))
+                            if clip:
+                                video_path = firebase.upload_video(clip, device_id)
+                        photo_path = firebase.upload_photo(camera.capture_bytes(), device_id)
+                        firebase.record_event(device_id, bowl_empty, score, photo_path,
+                                              cat_seen=cat_seen, on_demand=on_demand,
+                                              video_path=video_path)
+                        if cat_seen:
+                            firebase.record_sighting(device_id, cat_confidence)
+                            state["last_cat_pub_at"] = time.monotonic()
+                        reason = ("premier relevé" if first_reading
+                                  else "changement d'état" if state_changed
+                                  else "chat vu" if cat_seen else "demande de l'app")
+                        print(f"📤 Publié ({reason})")
+                    state["last_bowl_empty"] = bowl_empty
+                    # 4. Compteurs du jour + notification si vide confirmé
                     firebase.update_daily_stats(bowl_empty, cat_seen)
-                    # 5. Notification si vide, après confirmation par 2 relevés
                     if bowl_empty:
                         state["empty_streak"] += 1
                         if state["empty_streak"] >= confirm_empty_checks:

@@ -23,12 +23,12 @@ except ImportError:
 
 
 class BowlDetector:
-    def __init__(self, empty_threshold=35.0):
+    def __init__(self, empty_threshold=35.0, roi=(0.25, 0.35, 0.5, 0.4)):
         # Seuil : en dessous de ce score, la gamelle est considérée comme vide
         self.empty_threshold = empty_threshold
-        # Zone de la gamelle dans l'image (x, y, largeur, hauteur en %)
-        # À AJUSTER selon le placement de ta caméra !
-        self.roi = (0.25, 0.35, 0.5, 0.4)
+        # Zone de la gamelle dans l'image (x, y, largeur, hauteur en fractions 0-1)
+        # À AJUSTER dans config.yaml (camera.roi) — voir calibrate.py !
+        self.roi = tuple(roi)
 
     def fill_score(self, image_bgr):
         """Calcule un score de remplissage (haut = plein, bas = vide)"""

@@ -13,6 +13,7 @@ export default function HomeScreen() {
   const [events, setEvents] = useState([]);
   const [lastPhotoUrl, setLastPhotoUrl] = useState(null);
   const [weekStats, setWeekStats] = useState([]); // [{date, fullRatio}]
+  const [lastCheck, setLastCheck] = useState(null); // du statut du Pi, à la minute
 
   useEffect(() => {
     // Historique des relevés + dernier état
@@ -30,6 +31,14 @@ export default function HomeScreen() {
       }
     });
     return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    // Heure du dernier relevé : le Pi publie son statut à chaque mesure
+    return onSnapshot(doc(db, 'status', 'raspberry-pi-1'), (snap) => {
+      const data = snap.data();
+      if (data?.lastSeen) setLastCheck(data.lastSeen.toDate());
+    }, () => {});
   }, []);
 
   useEffect(() => {
@@ -83,9 +92,9 @@ export default function HomeScreen() {
               <Text style={styles.gaugeValue}>
                 {last ? `score ${last.fillScore}` : '—'} (seuil vide : {EMPTY_THRESHOLD})
               </Text>
-              {last?.timestamp && (
+              {(lastCheck || last?.timestamp) && (
                 <Text style={styles.lastCheck}>
-                  Dernier relevé : {last.timestamp.toDate().toLocaleString('fr-FR')}
+                  Dernier relevé : {(lastCheck || last.timestamp).toLocaleString('fr-FR')}
                 </Text>
               )}
             </View>
