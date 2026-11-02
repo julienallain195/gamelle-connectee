@@ -28,7 +28,7 @@ Guide pas-à-pas pour mettre la gamelle connectée en production.
 
 ```bash
 # Trouver l'IP du Pi : interface de ta box (192.168.1.x) ou :
-ssh pi@gamelle.local        # souvent plus simple
+ssh tampis@gamelle.local        # souvent plus simple
 # mot de passe : celui défini à l'étape 2
 ```
 
@@ -51,7 +51,7 @@ nano config.yaml    # → id du device, éventuellement intervalle
 Copier les deux fichiers secrets depuis le PC (le plus simple : les recréer) :
 - `service-account.json` → le télécharger depuis la console Firebase
   (Paramètres → Comptes de service → Générer une nouvelle clé privée) ou copier celui du PC :
-  `scp "C:/Users/<toi>/Documents/projet_app/gamelle-connectee/raspberry-pi/service-account.json" pi@gamelle.local:gamelle-connectee/raspberry-pi/`
+  `scp "C:/Users/<toi>/Documents/projet_app/gamelle-connectee/raspberry-pi/service-account.json" tampis@gamelle.local:gamelle-connectee/raspberry-pi/`
 
 Tester la webcam USB (C270 branchée sur un port USB du Pi) :
 ```bash
@@ -77,7 +77,8 @@ apparaître en temps réel. Ctrl+C pour arrêter.
 ## 6. Service systemd (démarrage automatique)
 
 ```bash
-# Adapter "pi" dans gamelle.service si ton utilisateur est différent
+# gamelle.service est déjà configuré pour l'utilisateur "tampis" ;
+# si tu changes de nom d'utilisateur, adapte User= et les chemins /home/tampis
 sudo cp gamelle.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now gamelle
