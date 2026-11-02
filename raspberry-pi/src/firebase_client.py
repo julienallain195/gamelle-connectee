@@ -81,14 +81,16 @@ class FirebaseClient:
         Retourne un objet watch à conserver (sinon l'écoute s'arrête)."""
         q = (
             self.db.collection("commands")
-            .where("deviceId", "==", device_id)
-            .where("status", "==", "pending")
+            .where(filter=firestore.FieldFilter("deviceId", "==", device_id))
+            .where(filter=firestore.FieldFilter("status", "==", "pending"))
         )
-        return q.on_snapshot(lambda snap: [
-            on_command(doc.id, doc.to_dict())
-            for doc in snap.documents
-            if doc.to_dict().get("status") == "pending"
-        ])
+        def _on_snapshot(snap, changes, read_time):
+            # Signature imposée par google-cloud-firestore : 3 arguments
+            for doc in snap:
+                data = doc.to_dict()
+                if data.get("status") == "pending":
+                    on_command(doc.id, data)
+        return q.on_snapshot(_on_snapshot)
 
     def mark_command_done(self, command_id, skipped=False):
         """Marque une commande comme traitée (l'app mobile attend ce statut)"""
@@ -101,6 +103,7 @@ class FirebaseClient:
     def watch_settings(self, on_settings):
         """Écoute le document settings/gamelle : réglages modifiables depuis l'app.
         on_settings(data) est appelé à chaque changement."""
-        return self.db.collection("settings").document("gamelle").on_snapshot(
-            lambda snap: on_settings(snap[0].to_dict() if snap else None)
-        )
+        def _on_snapshot(doc_snapshot, changes, read_time):
+            # Signature imposée par google-cloud-firestore : 3 arguments
+            on_settings(doc_snapshot[0].to_dict() if doc_snapshot else None)
+        return self.db.collection("settings").document("gamelle").on_snapshot(_on_snapshot)
