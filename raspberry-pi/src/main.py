@@ -111,6 +111,8 @@ def main():
     confirm_empty_checks = int(config.get("notifications", {}).get("confirm_empty_checks", 2))
     # Anti-spam chat : délai minimum entre deux photos/vidéos du chat
     cat_cooldown_seconds = int(config.get("detection", {}).get("cat_cooldown_minutes", 10)) * 60
+    # Photo comparative "après passage du chat" : délai depuis la détection
+    after_cat_delay = int(config.get("detection", {}).get("after_cat_delay_seconds", 180))
 
     # Détection chat/humain : optionnelle, si le modèle TFLite est présent
     detection_conf = config.get("detection", {})
@@ -174,6 +176,19 @@ def main():
     # le verrou sépare les relevés planifiés des captures à la demande.
     capture_lock = threading.Lock()
 
+    def capture_after_passage(event_id):
+        """Photo + score APRÈS le passage du chat : comparaison avant/après
+        pour voir s'il a mangé. Programmée par Timer après la détection."""
+        with capture_lock:
+            try:
+                image = camera.capture_array()
+                bowl_empty, score = detector.is_empty(image)
+                photo_path = firebase.upload_photo(camera.capture_bytes(), device_id)
+                firebase.update_event_after(event_id, photo_path, score, bowl_empty)
+                print(f"📸 Photo 'après passage' publiée (score: {score})")
+            except Exception as err:
+                print(f"Erreur photo après passage: {err}")
+
     def check_bowl(on_demand=False, command_id=None):
         """Une vérification complète : photo → détection → Firebase → notif"""
         with capture_lock:
@@ -236,12 +251,16 @@ def main():
                             if clip:
                                 video_path = firebase.upload_video(clip, device_id)
                         photo_path = firebase.upload_photo(camera.capture_bytes(), device_id)
-                        firebase.record_event(device_id, bowl_empty, score, photo_path,
+                        event_id = firebase.record_event(device_id, bowl_empty, score, photo_path,
                                               cat_seen=cat_seen, on_demand=on_demand,
                                               video_path=video_path)
                         if cat_seen:
                             firebase.record_sighting(device_id, cat_confidence)
                             state["last_cat_pub_at"] = time.monotonic()
+                            # Comparaison avant/après : photo retardée attachée à l'événement
+                            threading.Timer(
+                                after_cat_delay, capture_after_passage, args=(event_id,)
+                            ).start()
                         reason = ("premier relevé" if first_reading
                                   else "changement d'état" if state_changed
                                   else "chat vu" if cat_seen else "demande de l'app")

@@ -38,18 +38,25 @@ function VideoCell({ videoUrl, onClose }) {
   );
 }
 
-// Une cellule de la grille : photo, ou vidéo (lue au tap)
+// Une cellule de la grille : photo (avant/après si dispo), ou vidéo (lue au tap)
 function PhotoCell({ item }) {
   const [playing, setPlaying] = useState(false);
+  const [showAfter, setShowAfter] = useState(false);
 
   if (playing && item.videoUrl) {
     return <VideoCell videoUrl={item.videoUrl} onClose={() => setPlaying(false)} />;
   }
 
+  const imageUrl = showAfter && item.afterUrl ? item.afterUrl : item.url;
+
   return (
-    <TouchableOpacity style={styles.cell} activeOpacity={0.9} onPress={() => item.videoUrl && setPlaying(true)}>
-      {item.url ? (
-        <Image source={{ uri: item.url }} style={styles.image} />
+    <TouchableOpacity
+      style={styles.cell}
+      activeOpacity={0.9}
+      onPress={() => (item.videoUrl ? setPlaying(true) : (item.afterUrl && setShowAfter(!showAfter)))}
+    >
+      {imageUrl ? (
+        <Image source={{ uri: imageUrl }} style={styles.image} />
       ) : (
         <View style={[styles.image, styles.imageEmpty]} />
       )}
@@ -66,6 +73,11 @@ function PhotoCell({ item }) {
       {item.occluded && (
         <View style={styles.occludedBadge}>
           <Text style={styles.badgeText}>🚧</Text>
+        </View>
+      )}
+      {item.afterUrl && (
+        <View style={styles.beforeAfterBadge}>
+          <Text style={styles.beforeAfterText}>{showAfter ? 'AVANT' : 'APRÈS'}</Text>
         </View>
       )}
     </TouchableOpacity>
@@ -98,6 +110,11 @@ export default function PhotosScreen() {
         }
         if (data.videoPath) {
           item.videoUrl = await getDownloadURL(ref(storage, data.videoPath)).catch(() => null);
+        }
+        if (data.afterPhotoPath) {
+          item.afterUrl = await getDownloadURL(ref(storage, data.afterPhotoPath)).catch(() => null);
+          item.afterScore = data.afterFillScore;
+          item.beforeScore = data.fillScore;
         }
         return item;
       })
@@ -261,6 +278,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 10,
     paddingHorizontal: 6, paddingVertical: 2,
   },
+  beforeAfterBadge: {
+    position: 'absolute', bottom: 6, left: 6,
+    backgroundColor: 'rgba(230,126,34,0.9)', borderRadius: 8,
+    paddingHorizontal: 8, paddingVertical: 3,
+  },
+  beforeAfterText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
   closeVideo: {
     position: 'absolute', top: 6, right: 6,
     backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 12, padding: 4,

@@ -22,6 +22,7 @@ detection:
   cat_model: "models/detect.tflite"  # Modèle TFLite détection chat (voir README)
   cat_confidence: 0.5                 # Seuil de confiance (0.5 = raisonnable)
   cat_cooldown_minutes: 10            # Anti-spam : 1 photo/vidéo max toutes les 10 min si le chat reste devant
+  after_cat_delay_seconds: 180        # Photo comparative "après le passage" (3 min après la détection)
 
 video:
   clip_seconds: 6            # Durée de la vidéo enregistrée quand le chat est détecté

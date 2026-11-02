@@ -37,8 +37,10 @@ class FirebaseClient:
     def record_event(self, device_id, bowl_empty, score, photo_path,
                      cat_seen=False, on_demand=False, video_path=None, occluded=False):
         """Écrit un événement dans la collection 'events' de Firestore.
-        bowl_empty/score peuvent être None si la vue était masquée."""
-        self.db.collection("events").add({
+        bowl_empty/score peuvent être None si la vue était masquée.
+        Retourne l'id du document (pour le compléter ensuite, ex: avant/après)."""
+        doc_ref = self.db.collection("events").document()
+        doc_ref.set({
             "deviceId": device_id,
             "bowlEmpty": bowl_empty,
             "fillScore": score,
@@ -49,6 +51,16 @@ class FirebaseClient:
             "occluded": occluded,
             "timestamp": firestore.SERVER_TIMESTAMP,
         })
+        return doc_ref.id
+
+    def update_event_after(self, event_id, photo_path, score, bowl_empty):
+        """Attache la photo et le score 'APRÈS passage du chat' à un événement."""
+        self.db.collection("events").document(event_id).set({
+            "afterPhotoPath": photo_path,
+            "afterFillScore": score,
+            "afterBowlEmpty": bowl_empty,
+            "afterAt": firestore.SERVER_TIMESTAMP,
+        }, merge=True)
 
     def record_sighting(self, device_id, confidence):
         """Écrit un passage du chat dans 'catSightings' (pour l'onglet Chat)"""

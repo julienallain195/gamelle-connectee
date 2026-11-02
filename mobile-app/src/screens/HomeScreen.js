@@ -131,7 +131,11 @@ export default function HomeScreen() {
           <Text style={styles.rowIcon}>{item.bowlEmpty ? '🚨' : '🍽️'}</Text>
           <Text style={styles.rowText}>
             {item.bowlEmpty ? 'Gamelle vide' : 'Gamelle pleine'}
-            {item.catSeen ? ' · 🐱 chat vu' : ''} — {item.timestamp?.toDate().toLocaleString('fr-FR')}
+            {item.catSeen ? ' · 🐱 chat vu' : ''}
+            {item.afterFillScore != null
+              ? ` · score ${item.fillScore} → ${item.afterFillScore}`
+              : ''}
+            {' — '}{item.timestamp?.toDate().toLocaleString('fr-FR')}
           </Text>
         </View>
       )}
