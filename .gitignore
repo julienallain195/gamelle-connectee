@@ -6,4 +6,4 @@ mobile-app/.env
 raspberry-pi/config.yaml
 raspberry-pi/service-account.json
 technologies.txt
-.DS_Store
+.DS_Storeraspberry-pi/models/
