@@ -5,5 +5,6 @@ __pycache__/
 mobile-app/.env
 raspberry-pi/config.yaml
 raspberry-pi/service-account.json
+raspberry-pi/models/
 technologies.txt
-.DS_Storeraspberry-pi/models/
+.DS_Store
