@@ -72,10 +72,13 @@ def clip_to_mp4(clip_bytes):
             return f.read()
 
 def occlusion_name(detections, roi, min_overlap=0.25):
-    """Retourne ('chat'|'personne', score) si un objet recouvre la zone gamelle,
-    sinon None. min_overlap = fraction de la zone gamelle recouverte."""
+    """Retourne ('chat'|'personne', score) si un chat ou un humain recouvre
+    la zone gamelle, sinon None. Les autres classes (arrière-plan, objets)
+    sont ignorées. min_overlap = fraction de la zone gamelle recouverte."""
     rx, ry, rw, rh = roi
     for cls, score, box in detections:
+        if cls not in (CocoDetector.CAT_CLASS_ID, CocoDetector.PERSON_CLASS_ID):
+            continue
         ymin, xmin, ymax, xmax = box
         # Intersection boîte/zone gamelle (coordonnées relatives 0.0-1.0)
         ix = max(0.0, min(rx + rw, xmax) - max(rx, xmin))

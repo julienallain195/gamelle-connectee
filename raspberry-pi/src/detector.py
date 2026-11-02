@@ -73,7 +73,12 @@ class CocoDetector:
         box = (ymin, xmin, ymax, xmax) en coordonnées relatives (0.0 → 1.0)."""
         rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
         resized = cv2.resize(rgb, (self.input_width, self.input_height))
-        input_data = np.expand_dims(resized, axis=0).astype(np.float32)
+        # Modèle quantifié (uint8) ou classique (float32) : même pipeline,
+        # seul le type des données d'entrée change.
+        if self.input_details[0]["dtype"] == np.uint8:
+            input_data = np.expand_dims(resized, axis=0)
+        else:
+            input_data = np.expand_dims(resized, axis=0).astype(np.float32)
 
         self.interpreter.set_tensor(self.input_details[0]["index"], input_data)
         self.interpreter.invoke()

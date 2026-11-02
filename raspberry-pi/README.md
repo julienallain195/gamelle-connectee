@@ -27,9 +27,11 @@ python3 -c "import cv2; c = cv2.VideoCapture(0, cv2.CAP_V4L2); ok, frame = c.rea
 
 # 6. Détection de chat (optionnelle mais recommandée)
 mkdir -p models
-# Modèle SSD MobileNet COCO (reconnaît la classe "cat", ~4 Mo) :
-wget -O models/detect.tflite https://storage.googleapis.com/download.tensorflow.org/models/tflite/task_library/object_detection/android/lite-model_ssd_mobilenet_v1_1_metadata_1.tflite
-# (si le lien ne marche plus : chercher "ssd mobilenet coco tflite" sur tfhub.dev)
+# Modèle SSD MobileNet COCO (float quantifié uint8, ~4 Mo) — hébergé sur Kaggle :
+wget -O models/model.tar.gz "https://www.kaggle.com/api/v1/models/tensorflow/ssd-mobilenet-v1/tfLite/metadata/1/download?version=1"
+tar -xzf models/model.tar.gz -C models/
+mv models/1.tflite models/detect.tflite
+rm models/model.tar.gz
 
 # 7. Lancement
 python src/main.py

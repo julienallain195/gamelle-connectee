@@ -62,7 +62,10 @@ python3 -c "import cv2; c = cv2.VideoCapture(0, cv2.CAP_V4L2); ok, f = c.read();
 Modèle de détection chat (optionnel mais recommandé) :
 ```bash
 mkdir -p models
-wget -O models/detect.tflite https://storage.googleapis.com/download.tensorflow.org/models/tflite/task_library/object_detection/android/lite-model_ssd_mobilenet_v1_1_metadata_1.tflite
+wget -O models/model.tar.gz "https://www.kaggle.com/api/v1/models/tensorflow/ssd-mobilenet-v1/tfLite/metadata/1/download?version=1"
+tar -xzf models/model.tar.gz -C models/
+mv models/1.tflite models/detect.tflite
+rm models/model.tar.gz
 ```
 
 ## 5. Test en direct
