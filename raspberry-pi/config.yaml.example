@@ -18,6 +18,17 @@ camera:
   # vert englobe exactement l'intérieur de la gamelle.
   roi: [0.25, 0.35, 0.5, 0.4]
 
+  # Pièce sombre : éclaircissement logiciel des images (CLAHE) — sans matériel.
+  # ⚠️ Change les scores → recalibrer (calibrate.py + seuil) après activation.
+  night_boost: true
+  # Réglages webcam (les valeurs non supportées par le modèle sont ignorées) :
+  settings:
+    brightness: 70          # plus lumineux que le défaut (~30 sur la C270)
+    contrast: 130           # un peu plus de pêche
+    gain: 150               # plus de sensibilité lumineuse (mais plus de grain)
+    # exposure_auto: 1       # décommenter pour exposer en MANUEL
+    # exposure_absolute: 250 # durée d'exposition (mode manuel seulement)
+
 detection:
   cat_model: "models/detect.tflite"  # Modèle TFLite détection chat (voir README)
   cat_confidence: 0.5                 # Seuil de confiance (0.5 = raisonnable)

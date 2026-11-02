@@ -91,7 +91,12 @@ def main():
     config = load_config()
 
     # Initialisation des composants
-    camera = Camera(width=config["camera"]["width"], height=config["camera"]["height"])
+    camera = Camera(
+        width=config["camera"]["width"],
+        height=config["camera"]["height"],
+        settings=config["camera"].get("settings", {}),
+        night_boost=config["camera"].get("night_boost", False),
+    )
     detector = BowlDetector(
         empty_threshold=config["camera"]["empty_threshold"],
         roi=tuple(config["camera"].get("roi", (0.25, 0.35, 0.5, 0.4))),
